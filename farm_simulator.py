@@ -1,18 +1,15 @@
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox
 import time
-import math
-
-# ===================== КЛАССЫ =====================
 
 class Crop:
-    def __init__(self, name, seed_cost, sell_price, grow_time, color, emoji, unlock_level=1):
+    def __init__(self, name, seed_cost, sell_price, grow_time, color, icon, unlock_level=1):
         self.name = name
         self.seed_cost = seed_cost
         self.sell_price = sell_price
         self.grow_time = grow_time
         self.color = color
-        self.emoji = emoji
+        self.icon = icon
         self.unlock_level = unlock_level
 
 class FarmCell:
@@ -20,31 +17,17 @@ class FarmCell:
         self.crop = None
         self.plant_time = None
         self.watered = False
-        self.stage = 'empty'  # empty, growing, ready, withered
+        self.stage = 'empty'
         self.progress = 0.0
         self.fertilized = False
-        self.pest_protected = False
-
-class Upgrade:
-    def __init__(self, name, description, cost, max_level, apply_func):
-        self.name = name
-        self.description = description
-        self.cost = cost
-        self.max_level = max_level
-        self.level = 0
-        self.apply_func = apply_func
-
-# ===================== ИГРА =====================
 
 class FarmGame:
     def __init__(self, root):
         self.root = root
         self.root.title("Farm Simulator Deluxe")
-        self.root.geometry("1100x800")
+        self.root.geometry("1050x750")
         self.root.configure(bg='#1a1a2e')
         self.root.resizable(False, False)
-
-        # --- Ресурсы ---
         self.money = 150
         self.level = 1
         self.xp = 0
@@ -52,335 +35,211 @@ class FarmGame:
         self.water = 50
         self.max_water = 50
         self.grid_size = 3
-
-        # --- Инструменты ---
         self.has_watering_can = False
-        self.watering_can_level = 0  # 0=нет, 1=обычная, 2=улучшенная
+        self.watering_can_level = 0
         self.auto_water = False
         self.growth_speed = 1.0
         self.auto_harvest = False
         self.price_bonus = 1.0
         self.greenhouse = False
-        self.pest_chance = 0.05
-
-        # --- Растения (18 штук) ---
+        self.rain_collector = False
         self.crops = {
-            'wheat':     Crop('Wheat',      10,  25,   5,  '#F4D03F', '🌾', 1),
-            'carrot':    Crop('Carrot',     20,  50,   8,  '#E67E22', '🥕', 1),
-            'potato':    Crop('Potato',     35,  90,   12, '#D4AC0D', '🥔', 1),
-            'tomato':    Crop('Tomato',     60,  150,  18, '#E74C3C', '🍅', 2),
-            'corn':      Crop('Corn',       100, 280,  25, '#F39C12', '🌽', 2),
-            'strawberry':Crop('Strawberry', 80,  200,  15, '#FF6B6B', '🍓', 2),
-            'onion':     Crop('Onion',      40,  110,  10, '#DDA0DD', '🧅', 3),
-            'garlic':    Crop('Garlic',     55,  140,  14, '#F5F5DC', '🧄', 3),
-            'rice':      Crop('Rice',       70,  180,  16, '#FFFFF0', '🍚', 3),
-            'pepper':    Crop('Pepper',     120, 320,  20, '#2ECC71', '🫑', 4),
-            'cabbage':   Crop('Cabbage',    90,  240,  22, '#82E0AA', '🥬', 4),
-            'broccoli':  Crop('Broccoli',   130, 350,  28, '#27AE60', '🥦', 4),
-            'eggplant':  Crop('Eggplant',   180, 480,  30, '#8E44AD', '🍆', 5),
-            'watermelon':Crop('Watermelon', 150, 400,  35, '#2ECC71', '🍉', 5),
-            'pumpkin':   Crop('Pumpkin',    200, 550,  45, '#E67E22', '🎃', 5),
-            'sunflower': Crop('Sunflower',  170, 450,  40, '#F1C40F', '🌻', 6),
-            'pineapple': Crop('Pineapple',  250, 700,  50, '#F39C12', '🍍', 6),
-            'grape':     Crop('Grape',      300, 800,  60, '#9B59B6', '🍇', 7),
+            'wheat': Crop('Wheat', 10, 25, 5, '#F4D03F', '[W]', 1),
+            'carrot': Crop('Carrot', 20, 50, 8, '#E67E22', '[C]', 1),
+            'potato': Crop('Potato', 35, 90, 12, '#D4AC0D', '[P]', 1),
+            'tomato': Crop('Tomato', 60, 150, 18, '#E74C3C', '[T]', 2),
+            'corn': Crop('Corn', 100, 280, 25, '#F39C12', '[N]', 2),
+            'strawberry': Crop('Strawberry', 80, 200, 15, '#FF6B6B', '[S]', 2),
+            'onion': Crop('Onion', 40, 110, 10, '#DDA0DD', '[O]', 3),
+            'garlic': Crop('Garlic', 55, 140, 14, '#F5F5DC', '[G]', 3),
+            'rice': Crop('Rice', 70, 180, 16, '#FFFFF0', '[R]', 3),
+            'pepper': Crop('Pepper', 120, 320, 20, '#2ECC71', '[E]', 4),
+            'cabbage': Crop('Cabbage', 90, 240, 22, '#82E0AA', '[B]', 4),
+            'broccoli': Crop('Broccoli', 130, 350, 28, '#27AE60', '[L]', 4),
+            'eggplant': Crop('Eggplant', 180, 480, 30, '#8E44AD', '[A]', 5),
+            'watermelon': Crop('Watermelon', 150, 400, 35, '#2ECC71', '[M]', 5),
+            'pumpkin': Crop('Pumpkin', 200, 550, 45, '#E67E22', '[K]', 5),
+            'sunflower': Crop('Sunflower', 170, 450, 40, '#F1C40F', '[F]', 6),
+            'pineapple': Crop('Pineapple', 250, 700, 50, '#F39C12', '[I]', 6),
+            'grape': Crop('Grape', 300, 800, 60, '#9B59B6', '[V]', 7),
         }
-
         self.selected_crop = 'wheat'
         self.farm = [[FarmCell() for _ in range(6)] for _ in range(6)]
-        self.cell_canvases = [[None for _ in range(6)] for _ in range(6)]
-        self.cell_frames = [[None for _ in range(6)] for _ in range(6)]
-
+        self.cell_buttons = [[None for _ in range(6)] for _ in range(6)]
         self.setup_ui()
         self.game_loop()
 
-    # ===================== UI =====================
-
     def setup_ui(self):
-        # --- Верхняя панель статов ---
-        top_frame = tk.Frame(self.root, bg='#16213e', height=70)
-        top_frame.pack(fill=tk.X, padx=10, pady=5)
-        top_frame.pack_propagate(False)
-
-        stats = [
-            ('💰', 'money', f'Money: {self.money}', '#2ECC71'),
-            ('⭐', 'level', f'Level: {self.level}', '#F39C12'),
-            ('📈', 'xp', f'XP: {self.xp}/{self.xp_to_next}', '#3498DB'),
-            ('💧', 'water', f'Water: {self.water}/{self.max_water}', '#5DADE2'),
-        ]
-
-        self.stat_labels = {}
-        for emoji, key, text, color in stats:
-            lbl = tk.Label(top_frame, text=f'{emoji} {text}', font=('Arial', 13, 'bold'),
-                          fg=color, bg='#16213e')
-            lbl.pack(side=tk.LEFT, padx=20, pady=15)
-            self.stat_labels[key] = lbl
-
-        # --- Основная область ---
-        main_frame = tk.Frame(self.root, bg='#1a1a2e')
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-
-        # --- Левая часть: Поле ---
-        left_frame = tk.Frame(main_frame, bg='#5D4037', bd=4, relief=tk.RIDGE)
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
-
-        tk.Label(left_frame, text='🚜 YOUR FARM', font=('Arial', 18, 'bold'),
-                bg='#5D4037', fg='white').pack(pady=8)
-
-        self.grid_container = tk.Frame(left_frame, bg='#5D4037')
-        self.grid_container.pack(padx=10, pady=10)
-
+        top = tk.Frame(self.root, bg='#16213e', height=60)
+        top.pack(fill=tk.X, padx=8, pady=4)
+        top.pack_propagate(False)
+        self.money_lbl = tk.Label(top, text='Money: 150', font=('Arial', 13, 'bold'), fg='#2ECC71', bg='#16213e')
+        self.money_lbl.pack(side=tk.LEFT, padx=15, pady=12)
+        self.level_lbl = tk.Label(top, text='Level: 1', font=('Arial', 13, 'bold'), fg='#F39C12', bg='#16213e')
+        self.level_lbl.pack(side=tk.LEFT, padx=15, pady=12)
+        self.xp_lbl = tk.Label(top, text='XP: 0/100', font=('Arial', 12), fg='#3498DB', bg='#16213e')
+        self.xp_lbl.pack(side=tk.LEFT, padx=15, pady=12)
+        self.water_lbl = tk.Label(top, text='Water: 50/50', font=('Arial', 12), fg='#5DADE2', bg='#16213e')
+        self.water_lbl.pack(side=tk.LEFT, padx=15, pady=12)
+        main = tk.Frame(self.root, bg='#1a1a2e')
+        main.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
+        left = tk.Frame(main, bg='#5D4037', bd=3, relief=tk.RIDGE)
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=4)
+        tk.Label(left, text='YOUR FARM', font=('Arial', 16, 'bold'), bg='#5D4037', fg='white').pack(pady=6)
+        self.grid_frame = tk.Frame(left, bg='#5D4037')
+        self.grid_frame.pack(padx=8, pady=8)
         self.create_grid()
-
-        # --- Правая часть: Панели ---
-        right_frame = tk.Frame(main_frame, width=340, bg='#0f3460')
-        right_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=5)
-        right_frame.pack_propagate(False)
-
-        # Вкладки
-        self.notebook = ttk.Notebook(right_frame)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        # Стиль вкладок
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure('TNotebook', background='#0f3460', tabmargins=[2, 5, 2, 0])
-        style.configure('TNotebook.Tab', font=('Arial', 10, 'bold'), padding=[10, 5])
-
-        # --- Вкладка: Растения ---
-        crops_tab = tk.Frame(self.notebook, bg='#0f3460')
-        self.notebook.add(crops_tab, text='🌱 Crops')
-
-        canvas = tk.Canvas(crops_tab, bg='#0f3460', highlightthickness=0)
-        scrollbar = ttk.Scrollbar(crops_tab, orient=tk.VERTICAL, command=canvas.yview)
-        scroll_frame = tk.Frame(canvas, bg='#0f3460')
-
-        scroll_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
-        canvas.create_window((0, 0), window=scroll_frame, anchor='nw')
-        canvas.configure(yscrollcommand=scrollbar.set)
-
+        right = tk.Frame(main, width=320, bg='#0f3460')
+        right.pack(side=tk.RIGHT, fill=tk.Y, padx=4)
+        right.pack_propagate(False)
+        tabs = tk.Frame(right, bg='#0f3460')
+        tabs.pack(fill=tk.X, padx=4, pady=4)
+        self.tab_frames = {}
+        self.tab_buttons = {}
+        for name, label in [('crops', 'CROPS'), ('shop', 'SHOP'), ('help', 'HELP')]:
+            btn = tk.Button(tabs, text=label, font=('Arial', 10, 'bold'), bg='#3498DB', fg='white', width=10,
+                           command=lambda n=name: self.switch_tab(n))
+            btn.pack(side=tk.LEFT, padx=2)
+            self.tab_buttons[name] = btn
+            frame = tk.Frame(right, bg='#0f3460')
+            self.tab_frames[name] = frame
+        self.current_tab = 'crops'
+        self.tab_frames['crops'].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.tab_buttons['crops'].config(bg='#27AE60')
+        crops_f = self.tab_frames['crops']
+        canvas = tk.Canvas(crops_f, bg='#0f3460', highlightthickness=0)
+        sb = tk.Scrollbar(crops_f, orient=tk.VERTICAL, command=canvas.yview)
+        inner = tk.Frame(canvas, bg='#0f3460')
+        inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.create_window((0, 0), window=inner, anchor='nw')
+        canvas.configure(yscrollcommand=sb.set)
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
         self.crop_var = tk.StringVar(value='wheat')
         self.crop_buttons = {}
-
         for crop_id, crop in self.crops.items():
-            frame = tk.Frame(scroll_frame, bg='#1a1a2e', bd=2, relief=tk.GROOVE)
-            frame.pack(fill=tk.X, padx=5, pady=3)
-
+            f = tk.Frame(inner, bg='#1a1a2e', bd=2, relief=tk.GROOVE)
+            f.pack(fill=tk.X, padx=4, pady=2)
             locked = self.level < crop.unlock_level
             state = tk.DISABLED if locked else tk.NORMAL
-
-            btn = tk.Radiobutton(frame, text=f"{crop.emoji} {crop.name}",
-                                variable=self.crop_var, value=crop_id,
-                                font=('Arial', 11, 'bold'), bg='#1a1a2e',
-                                fg='#7F8C8D' if locked else 'white',
-                                selectcolor='#0f3460', state=state,
-                                command=lambda: self.select_crop())
-            btn.pack(anchor=tk.W, padx=5, pady=2)
-
-            info = f"Cost: ${crop.seed_cost} | Sell: ${crop.sell_price} | Time: {crop.grow_time}s"
+            fg_color = '#7F8C8D' if locked else 'white'
+            rb = tk.Radiobutton(f, text=crop.icon + ' ' + crop.name, variable=self.crop_var, value=crop_id,
+                               font=('Arial', 10, 'bold'), bg='#1a1a2e', fg=fg_color, selectcolor='#0f3460', state=state,
+                               command=lambda: self.select_crop())
+            rb.pack(anchor=tk.W, padx=4, pady=1)
+            info = 'Seed: $' + str(crop.seed_cost) + ' | Sell: $' + str(crop.sell_price) + ' | Time: ' + str(crop.grow_time) + 's'
             if locked:
-                info += f" | 🔒 Lv.{crop.unlock_level}"
-
-            tk.Label(frame, text=info, font=('Arial', 9),
-                    bg='#1a1a2e', fg='#95A5A6').pack(anchor=tk.W, padx=5, pady=(0,3))
-            self.crop_buttons[crop_id] = (btn, frame)
-
-        # --- Вкладка: Магазин ---
-        shop_tab = tk.Frame(self.notebook, bg='#0f3460')
-        self.notebook.add(shop_tab, text='🏪 Shop')
-
+                info = info + ' | LOCK Lv.' + str(crop.unlock_level)
+            tk.Label(f, text=info, font=('Arial', 8), bg='#1a1a2e', fg='#95A5A6').pack(anchor=tk.W, padx=4, pady=(0,2))
+            self.crop_buttons[crop_id] = (rb, f)
+        shop_f = self.tab_frames['shop']
+        shop_canvas = tk.Canvas(shop_f, bg='#0f3460', highlightthickness=0)
+        shop_sb = tk.Scrollbar(shop_f, orient=tk.VERTICAL, command=shop_canvas.yview)
+        shop_inner = tk.Frame(shop_canvas, bg='#0f3460')
+        shop_inner.bind('<Configure>', lambda e: shop_canvas.configure(scrollregion=shop_canvas.bbox('all')))
+        shop_canvas.create_window((0, 0), window=shop_inner, anchor='nw')
+        shop_canvas.configure(yscrollcommand=shop_sb.set)
+        shop_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        shop_sb.pack(side=tk.RIGHT, fill=tk.Y)
         shop_items = [
-            ('💧 Watering Can', 'Buy to enable watering\nLevel 1: 1 cell | Level 2: 3x3 area',
-             80, self.buy_watering_can),
-            ('🚿 Auto-Water', 'Plants never dry out', 1200, self.buy_auto_water),
-            ('⚡ Growth Boost', 'Plants grow 50% faster', 1500, self.buy_growth_boost),
-            ('📐 Expand Field', f'Increase farm size\nCurrent: {self.grid_size}x{self.grid_size}',
-             500, self.expand_farm),
-            ('🏠 Greenhouse', 'Plants never wither', 2000, self.buy_greenhouse),
-            ('🤖 Auto-Harvest', 'Automatically harvest ready crops', 3000, self.buy_auto_harvest),
-            ('🛡️ Pest Control', 'Protects from pests', 800, self.buy_pest_control),
-            ('📢 Marketing', '+25% sell price', 1000, self.buy_marketing),
-            ('🚰 Water Tank', '+25 max water capacity', 300, self.buy_water_tank),
-            ('🌧️ Rain Collector', 'Auto-refills water over time', 1500, self.buy_rain_collector),
+            ('watering_can', 'Watering Can', 'Buy to enable watering. Lv1: 1 cell. Lv2: 3x3 area.', 80, self.buy_watering_can),
+            ('auto_water', 'Auto-Water', 'Plants never dry out.', 1200, self.buy_auto_water),
+            ('growth_boost', 'Growth Boost', 'Plants grow 50% faster.', 1500, self.buy_growth_boost),
+            ('expand', 'Expand Field', 'Increase farm size.', 500, self.expand_farm),
+            ('greenhouse', 'Greenhouse', 'Plants never wither.', 2000, self.buy_greenhouse),
+            ('auto_harvest', 'Auto-Harvest', 'Auto collect ready crops.', 3000, self.buy_auto_harvest),
+            ('pest', 'Pest Control', 'Protects from pests.', 800, self.buy_pest_control),
+            ('marketing', 'Marketing', '+25% sell price.', 1000, self.buy_marketing),
+            ('water_tank', 'Water Tank', '+25 max water.', 300, self.buy_water_tank),
+            ('rain', 'Rain Collector', 'Auto-refills water.', 1500, self.buy_rain_collector),
         ]
-
         self.shop_buttons = {}
-        for emoji_name, desc, cost, cmd in shop_items:
-            frame = tk.Frame(shop_tab, bg='#1a1a2e', bd=2, relief=tk.GROOVE)
-            frame.pack(fill=tk.X, padx=5, pady=3)
+        for key, name, desc, cost, cmd in shop_items:
+            f = tk.Frame(shop_inner, bg='#1a1a2e', bd=2, relief=tk.GROOVE)
+            f.pack(fill=tk.X, padx=4, pady=2)
+            btn = tk.Button(f, text=name + ' ($' + str(cost) + ')', font=('Arial', 9, 'bold'), bg='#3498DB', fg='white', command=cmd)
+            btn.pack(fill=tk.X, padx=4, pady=(4,0))
+            tk.Label(f, text=desc, font=('Arial', 8), bg='#1a1a2e', fg='#95A5A6', justify=tk.LEFT).pack(anchor=tk.W, padx=4, pady=(0,3))
+            self.shop_buttons[key] = btn
+        help_f = self.tab_frames['help']
+        help_text = "HOW TO PLAY" + chr(10) + chr(10)
+        help_text += "Left Click = Plant / Harvest" + chr(10)
+        help_text += "Right Click = Water (need Watering Can!)" + chr(10) + chr(10)
+        help_text += "WATER SYSTEM:" + chr(10)
+        help_text += "- Buy Watering Can first!" + chr(10)
+        help_text += "- Each water costs 5 units" + chr(10)
+        help_text += "- Water refills over time" + chr(10)
+        help_text += "- Buy upgrades for more water" + chr(10) + chr(10)
+        help_text += "18 CROPS:" + chr(10)
+        help_text += "- Unlock by leveling up" + chr(10)
+        help_text += "- Higher level = more profit" + chr(10) + chr(10)
+        help_text += "TIPS:" + chr(10)
+        help_text += "- Plants dry out in 10s" + chr(10)
+        help_text += "- Withered = no profit" + chr(10)
+        help_text += "- Use upgrades wisely!" + chr(10) + chr(10)
+        help_text += "Good luck, farmer!"
+        tk.Label(help_f, text=help_text, font=('Arial', 10), bg='#0f3460', fg='white', justify=tk.LEFT, wraplength=280).pack(padx=8, pady=8)
+        self.log_text = tk.Text(right, height=7, width=38, font=('Courier', 9), state=tk.DISABLED, bg='#1a1a2e', fg='#2ECC71', wrap=tk.WORD)
+        self.log_text.pack(fill=tk.X, padx=4, pady=4)
+        self.log('Welcome to Farm Simulator Deluxe!')
+        self.log('Buy a Watering Can to start watering!')
 
-            name = emoji_name.split(' ', 1)[1] if ' ' in emoji_name else emoji_name
-            btn = tk.Button(frame, text=f'{emoji_name} (${cost})',
-                           font=('Arial', 10, 'bold'), bg='#3498DB', fg='white',
-                           command=cmd)
-            btn.pack(fill=tk.X, padx=5, pady=(5,0))
-
-            tk.Label(frame, text=desc, font=('Arial', 9),
-                    bg='#1a1a2e', fg='#95A5A6', justify=tk.LEFT).pack(anchor=tk.W, padx=5, pady=(0,5))
-
-            self.shop_buttons[name.lower().replace(' ', '_')] = btn
-
-        # --- Вкладка: Инфо ---
-        info_tab = tk.Frame(self.notebook, bg='#0f3460')
-        self.notebook.add(info_tab, text='ℹ️ Help')
-
-        help_text = """🎮 HOW TO PLAY
-
-🖱️ Left Click — Plant seeds / Harvest
-🖱️ Right Click — Water plant (need Watering Can!)
-
-💧 Water System:
-• Buy Watering Can first!
-• Each water costs 5 water units
-• Water refills over time
-• Buy upgrades to get more water
-
-🌱 18 Different Crops:
-• Unlock new crops by leveling up
-• Higher level = better profit
-
-⚠️ Tips:
-• Plants dry out in 10s without water
-• Withered plants give nothing
-• Use upgrades wisely!
-
-Good luck, farmer! 🚜"""
-
-        tk.Label(info_tab, text=help_text, font=('Arial', 11),
-                bg='#0f3460', fg='white', justify=tk.LEFT,
-                wraplength=300).pack(padx=10, pady=10)
-
-        # --- Лог ---
-        self.log_text = tk.Text(right_frame, height=8, width=40,
-                               font=('Consolas', 9), state=tk.DISABLED,
-                               bg='#1a1a2e', fg='#2ECC71',
-                               wrap=tk.WORD)
-        self.log_text.pack(fill=tk.X, padx=5, pady=5)
-
-        self.log('🌾 Welcome to Farm Simulator Deluxe!')
-        self.log('💡 Buy a Watering Can to start watering!')
-
-    # ===================== СОЗДАНИЕ ПОЛЯ (БЕЗ МЕРЦАНИЯ) =====================
+    def switch_tab(self, name):
+        self.tab_frames[self.current_tab].pack_forget()
+        self.tab_buttons[self.current_tab].config(bg='#3498DB')
+        self.current_tab = name
+        self.tab_frames[name].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.tab_buttons[name].config(bg='#27AE60')
 
     def create_grid(self):
-        """Создаём грядки ОДИН РАЗ — никакого мерцания!"""
         for i in range(6):
             for j in range(6):
-                frame = tk.Frame(self.grid_container, width=90, height=90,
-                                bg='#3E2723', bd=2, relief=tk.SUNKEN)
-                frame.grid(row=i, column=j, padx=2, pady=2)
-                frame.grid_propagate(False)
-
-                # Canvas для рисования
-                cv = tk.Canvas(frame, width=86, height=86,
-                              bg='#5D4037', highlightthickness=0)
-                cv.pack(fill=tk.BOTH, expand=True)
-
-                # Земля (фон)
-                cv.create_rectangle(2, 2, 84, 84, fill='#6D4C41', outline='#4E342E', width=2)
-
-                # Текст растения
-                plant_text = cv.create_text(43, 35, text='', font=('Arial', 24))
-
-                # Прогресс-бар фон
-                cv.create_rectangle(8, 68, 78, 78, fill='#3E2723', outline='#5D4037', width=1)
-                # Прогресс-бар заполнение
-                progress_bar = cv.create_rectangle(8, 68, 8, 78, fill='#2ECC71', outline='')
-
-                # Текст статуса
-                status_text = cv.create_text(43, 55, text='', font=('Arial', 8), fill='white')
-
-                # Клики
-                cv.bind('<Button-1>', lambda e, r=i, c=j: self.cell_click(r, c))
-                cv.bind('<Button-3>', lambda e, r=i, c=j: self.cell_water(r, c))
-
-                self.cell_canvases[i][j] = {
-                    'canvas': cv,
-                    'plant': plant_text,
-                    'progress': progress_bar,
-                    'status': status_text,
-                    'frame': frame
-                }
-                self.cell_frames[i][j] = frame
-
-                # Скрываем клетки за пределами grid_size
+                btn = tk.Button(self.grid_frame, width=10, height=5, font=('Arial', 9, 'bold'), bg='#6D4C41', fg='white',
+                               relief=tk.RIDGE, bd=2, command=lambda r=i, c=j: self.cell_click(r, c))
+                btn.bind('<Button-3>', lambda e, r=i, c=j: self.cell_water(r, c))
+                btn.grid(row=i, column=j, padx=2, pady=2)
+                self.cell_buttons[i][j] = btn
                 if i >= self.grid_size or j >= self.grid_size:
-                    frame.grid_remove()
+                    btn.grid_remove()
 
-    def update_cell_visual(self, row, col):
-        """Обновляем ВИЗУАЛ одной клетки (без пересоздания!)"""
+    def update_cell(self, row, col):
         cell = self.farm[row][col]
-        vis = self.cell_canvases[row][col]
-        cv = vis['canvas']
-
+        btn = self.cell_buttons[row][col]
         if row >= self.grid_size or col >= self.grid_size:
-            vis['frame'].grid_remove()
+            btn.grid_remove()
             return
         else:
-            vis['frame'].grid()
-
+            btn.grid()
         if cell.stage == 'empty':
-            cv.itemconfig(vis['plant'], text='')
-            cv.itemconfig(vis['status'], text='')
-            cv.coords(vis['progress'], 8, 68, 8, 78)
-            cv.itemconfig(vis['progress'], fill='#2ECC71')
-            # Земля сухая/влажная
-            soil_color = '#5D4037' if not cell.watered else '#3E2723'
-            cv.create_rectangle(2, 2, 84, 84, fill=soil_color, outline='#4E342E', width=2)
-
+            btn.config(text='[EMPTY]', bg='#6D4C41', fg='white')
         elif cell.stage == 'growing':
             crop = self.crops[cell.crop]
-            progress = min(1.0, cell.progress)
-            bar_width = int(70 * progress)
-
-            # Эмодзи меняется по стадиям роста
-            if progress < 0.3:
-                emoji = '🌱'
-            elif progress < 0.6:
-                emoji = '🌿'
-            elif progress < 0.9:
-                emoji = crop.emoji
+            progress = min(100, int(cell.progress * 100))
+            if progress < 30:
+                icon = '(seed)'
+            elif progress < 60:
+                icon = '(grow)'
             else:
-                emoji = crop.emoji
-
-            cv.itemconfig(vis['plant'], text=emoji)
-
+                icon = crop.icon
             if cell.watered:
-                cv.itemconfig(vis['status'], text=f'{int(progress*100)}%', fill='#82E0AA')
-                cv.coords(vis['progress'], 8, 68, 8 + bar_width, 78)
-                cv.itemconfig(vis['progress'], fill='#2ECC71')
+                btn.config(text=icon + chr(10) + str(progress) + '%', bg='#27AE60', fg='white')
             else:
-                cv.itemconfig(vis['status'], text='NEEDS WATER!', fill='#E74C3C')
-                cv.coords(vis['progress'], 8, 68, 8 + bar_width, 78)
-                cv.itemconfig(vis['progress'], fill='#F39C12')
-
+                btn.config(text=icon + chr(10) + 'DRY! ' + str(progress) + '%', bg='#D35400', fg='white')
         elif cell.stage == 'ready':
             crop = self.crops[cell.crop]
-            cv.itemconfig(vis['plant'], text=crop.emoji)
-            cv.itemconfig(vis['status'], text='HARVEST!', fill='#F1C40F')
-            cv.coords(vis['progress'], 8, 68, 78, 78)
-            cv.itemconfig(vis['progress'], fill='#F1C40F')
-
+            btn.config(text=crop.icon + chr(10) + 'HARVEST!', bg=crop.color, fg='black')
         elif cell.stage == 'withered':
-            cv.itemconfig(vis['plant'], text='🥀')
-            cv.itemconfig(vis['status'], text='DEAD', fill='#7F8C8D')
-            cv.coords(vis['progress'], 8, 68, 78, 78)
-            cv.itemconfig(vis['progress'], fill='#5D6D7E')
-
-    # ===================== ИГРОВАЯ ЛОГИКА =====================
+            btn.config(text='[DEAD]' + chr(10) + 'Clear', bg='#5D6D7E', fg='white')
 
     def select_crop(self):
         self.selected_crop = self.crop_var.get()
 
     def cell_click(self, row, col):
         cell = self.farm[row][col]
-
         if cell.stage == 'empty':
             crop = self.crops[self.selected_crop]
             if self.level < crop.unlock_level:
-                messagebox.showwarning('Locked', f'Reach level {crop.unlock_level} to unlock {crop.name}!')
+                messagebox.showwarning('Locked', 'Reach level ' + str(crop.unlock_level) + '!')
                 return
             if self.money >= crop.seed_cost:
                 self.money -= crop.seed_cost
@@ -389,54 +248,44 @@ Good luck, farmer! 🚜"""
                 cell.watered = True
                 cell.stage = 'growing'
                 cell.progress = 0.0
-                self.log(f'🌱 Planted {crop.name} (-${crop.seed_cost})')
+                self.log('Planted ' + crop.name + ' (-$' + str(crop.seed_cost) + ')')
                 self.update_stats()
             else:
-                messagebox.showwarning('No Money', f'Need ${crop.seed_cost} for {crop.name}')
-
+                messagebox.showwarning('No Money', 'Need $' + str(crop.seed_cost))
         elif cell.stage == 'ready':
             crop = self.crops[cell.crop]
             sell_price = int(crop.sell_price * self.price_bonus)
             self.money += sell_price
             xp_gain = int(sell_price / 5)
             self.xp += xp_gain
-
-            self.log(f'🌾 Harvested {crop.name} (+${sell_price}, +{xp_gain} XP)')
-
+            self.log('Harvested ' + crop.name + ' (+$' + str(sell_price) + ', +' + str(xp_gain) + ' XP)')
             if self.xp >= self.xp_to_next:
                 self.level_up()
-
             cell.stage = 'empty'
             cell.crop = None
             cell.watered = False
             cell.progress = 0
             cell.fertilized = False
             self.update_stats()
-
         elif cell.stage == 'withered':
             cell.stage = 'empty'
             cell.crop = None
             cell.watered = False
             cell.progress = 0
-            self.log('🥀 Cleared dead plant')
-
-        self.update_cell_visual(row, col)
+            self.log('Cleared dead plant')
+        self.update_cell(row, col)
 
     def cell_water(self, row, col):
         if not self.has_watering_can:
-            messagebox.showinfo('No Tool', 'Buy a Watering Can in the Shop first!')
+            messagebox.showinfo('No Tool', 'Buy Watering Can in Shop!')
             return
-
-        cell = self.farm[row][col]
-
         if self.watering_can_level >= 2:
-            # Поливаем 3x3 область
             for di in range(-1, 2):
                 for dj in range(-1, 2):
                     ni, nj = row + di, col + dj
                     if 0 <= ni < self.grid_size and 0 <= nj < self.grid_size:
                         self._water_single(ni, nj)
-            self.log(f'💧 Watered 3x3 area around [{row},{col}]')
+            self.log('Watered 3x3 at [' + str(row) + ',' + str(col) + ']')
         else:
             self._water_single(row, col)
 
@@ -445,125 +294,77 @@ Good luck, farmer! 🚜"""
         if cell.stage == 'growing' and self.water >= 5:
             self.water -= 5
             cell.watered = True
-            self.update_cell_visual(row, col)
+            self.update_cell(row, col)
             self.update_stats()
 
     def game_loop(self):
         current_time = time.time()
-
         for i in range(self.grid_size):
             for j in range(self.grid_size):
                 cell = self.farm[i][j]
-
                 if cell.stage == 'growing':
                     crop = self.crops[cell.crop]
-
-                    # Автополив
                     if self.auto_water or self.greenhouse:
                         cell.watered = True
-
-                    # Рост
                     if cell.watered:
                         elapsed = current_time - cell.plant_time
                         speed = self.growth_speed * (1.5 if cell.fertilized else 1.0)
                         cell.progress = min(1.0, elapsed / (crop.grow_time / speed))
-
                         if cell.progress >= 1.0:
                             cell.stage = 'ready'
                             if self.auto_harvest:
                                 self.cell_click(i, j)
                     else:
-                        # Засыхание
                         elapsed = current_time - cell.plant_time
                         if elapsed > 10 and cell.progress < 1.0:
                             cell.stage = 'withered'
-
-                # Вредители (если нет защиты)
-                if cell.stage == 'growing' and not cell.pest_protected:
-                    if not hasattr(cell, 'last_pest_check'):
-                        cell.last_pest_check = current_time
-                    if current_time - cell.last_pest_check > 5:
-                        cell.last_pest_check = current_time
-                        # Вредители замедляют рост
-                        pass
-
-                self.update_cell_visual(i, j)
-
-        # Восстановление воды
-        if hasattr(self, 'rain_collector') and self.rain_collector:
-            if not hasattr(self, 'last_water_refill'):
-                self.last_water_refill = current_time
-            if current_time - self.last_water_refill > 3:
-                self.last_water_refill = current_time
-                self.water = min(self.max_water, self.water + 2)
-                self.update_stats()
-        else:
-            if not hasattr(self, 'last_water_refill'):
-                self.last_water_refill = current_time
-            if current_time - self.last_water_refill > 5:
-                self.last_water_refill = current_time
-                self.water = min(self.max_water, self.water + 1)
-                self.update_stats()
-
-        self.root.after(300, self.game_loop)
-
-    # ===================== СТАТЫ =====================
+                self.update_cell(i, j)
+        if not hasattr(self, 'last_refill'):
+            self.last_refill = current_time
+        interval = 3 if self.rain_collector else 5
+        amount = 2 if self.rain_collector else 1
+        if current_time - self.last_refill > interval:
+            self.last_refill = current_time
+            self.water = min(self.max_water, self.water + amount)
+            self.update_stats()
+        self.root.after(400, self.game_loop)
 
     def update_stats(self):
-        self.stat_labels['money'].config(text=f'💰 Money: {self.money}')
-        self.stat_labels['level'].config(text=f'⭐ Level: {self.level}')
-        self.stat_labels['xp'].config(text=f'📈 XP: {self.xp}/{self.xp_to_next}')
-        self.stat_labels['water'].config(text=f'💧 Water: {self.water}/{self.max_water}')
-
-        # Обновляем кнопки магазина
-        self._update_shop_button('watering_can', self.has_watering_can,
-                                '💧 Watering Can Lv.2 (${200})' if self.watering_can_level == 1 else
-                                '💧 Watering Can (${80})' if not self.has_watering_can else
-                                '💧 Watering Can [MAX]')
-
-        self._update_shop_button('auto-water', self.auto_water,
-                                '🚿 Auto-Water (${1200})', 'Auto-Water [ACTIVE]')
-
-        self._update_shop_button('growth_boost', self.growth_speed >= 2.5,
-                                f'⚡ Growth Boost (${1500})', 'Growth Boost [MAX]')
-
-        self._update_shop_button('expand_field', self.grid_size >= 6,
-                                f'📐 Expand Field (${500 * self.grid_size})', 'Max Size Reached')
-
-        self._update_shop_button('greenhouse', self.greenhouse,
-                                '🏠 Greenhouse (${2000})', 'Greenhouse [ACTIVE]')
-
-        self._update_shop_button('auto-harvest', self.auto_harvest,
-                                '🤖 Auto-Harvest (${3000})', 'Auto-Harvest [ACTIVE]')
-
-        self._update_shop_button('pest_control', self.pest_chance <= 0,
-                                '🛡️ Pest Control (${800})', 'Pest Control [ACTIVE]')
-
-        self._update_shop_button('marketing', self.price_bonus >= 1.5,
-                                '📢 Marketing (${1000})', 'Marketing [MAX]')
-
-        self._update_shop_button('water_tank', False,
-                                f'🚰 Water Tank (+25) (${300})')
-
-        self._update_shop_button('rain_collector', getattr(self, 'rain_collector', False),
-                                '🌧️ Rain Collector (${1500})', 'Rain Collector [ACTIVE]')
-
-        # Обновляем кнопки растений (разблокировка)
-        for crop_id, (btn, frame) in self.crop_buttons.items():
+        self.money_lbl.config(text='Money: ' + str(self.money))
+        self.level_lbl.config(text='Level: ' + str(self.level))
+        self.xp_lbl.config(text='XP: ' + str(self.xp) + '/' + str(self.xp_to_next))
+        self.water_lbl.config(text='Water: ' + str(self.water) + '/' + str(self.max_water))
+        if not self.has_watering_can:
+            self._set_shop('watering_can', 'Watering Can ($80)', False)
+        elif self.watering_can_level == 1:
+            self._set_shop('watering_can', 'Watering Can UPGRADE ($200)', False)
+        else:
+            self._set_shop('watering_can', 'Watering Can [MAX]', True)
+        self._set_shop('auto_water', 'Auto-Water [ON]', self.auto_water, 'Auto-Water ($1200)')
+        self._set_shop('growth_boost', 'Growth x' + str(self.growth_speed) + ' [MAX]' if self.growth_speed >= 2.5 else 'Growth Boost ($1500)', self.growth_speed >= 2.5)
+        if self.grid_size >= 6:
+            self._set_shop('expand', 'Field [MAX]', True)
+        else:
+            self._set_shop('expand', 'Expand Field ($' + str(500*self.grid_size) + ')', False)
+        self._set_shop('greenhouse', 'Greenhouse [ON]', self.greenhouse, 'Greenhouse ($2000)')
+        self._set_shop('auto_harvest', 'Auto-Harvest [ON]', self.auto_harvest, 'Auto-Harvest ($3000)')
+        self._set_shop('pest', 'Pest Control [ON]', False, 'Pest Control ($800)')
+        self._set_shop('marketing', 'Marketing +' + str(int((self.price_bonus-1)*100)) + '% [MAX]' if self.price_bonus >= 1.5 else 'Marketing ($1000)', self.price_bonus >= 1.5)
+        self._set_shop('water_tank', 'Water Tank (+25) ($300)', False)
+        self._set_shop('rain', 'Rain Collector [ON]', self.rain_collector, 'Rain Collector ($1500)')
+        for crop_id, (rb, f) in self.crop_buttons.items():
             crop = self.crops[crop_id]
             if self.level >= crop.unlock_level:
-                btn.config(state=tk.NORMAL, fg='white')
+                rb.config(state=tk.NORMAL, fg='white')
 
-    def _update_shop_button(self, key, active_or_max, default_text, active_text=None):
+    def _set_shop(self, key, active_text, active, default_text=None):
         btn = self.shop_buttons.get(key)
         if not btn:
             return
-        if active_or_max:
-            btn.config(text=active_text or default_text, state=tk.DISABLED, bg='#27AE60')
+        if active:
+            btn.config(text=active_text, state=tk.DISABLED, bg='#27AE60')
         else:
-            btn.config(text=default_text, state=tk.NORMAL, bg='#3498DB')
-
-    # ===================== УЛУЧШЕНИЯ =====================
+            btn.config(text=default_text or active_text, state=tk.NORMAL, bg='#3498DB')
 
     def buy_watering_can(self):
         if not self.has_watering_can:
@@ -571,31 +372,31 @@ Good luck, farmer! 🚜"""
                 self.money -= 80
                 self.has_watering_can = True
                 self.watering_can_level = 1
-                self.log('💧 Bought Watering Can! Right-click to water.')
+                self.log('Bought Watering Can! RMB to water.')
                 self.update_stats()
             else:
-                messagebox.showwarning('No Money', 'Need $80 for Watering Can')
+                messagebox.showwarning('No Money', 'Need $80')
         elif self.watering_can_level == 1:
             if self.money >= 200:
                 self.money -= 200
                 self.watering_can_level = 2
-                self.log('💧 Upgraded to Advanced Watering Can! Now waters 3x3 area!')
+                self.log('Advanced Watering Can! 3x3 area!')
                 self.update_stats()
             else:
-                messagebox.showwarning('No Money', 'Need $200 for upgrade')
+                messagebox.showwarning('No Money', 'Need $200')
 
     def buy_auto_water(self):
         if not self.auto_water and self.money >= 1200:
             self.money -= 1200
             self.auto_water = True
-            self.log('🚿 Auto-Water activated!')
+            self.log('Auto-Water ON!')
             self.update_stats()
 
     def buy_growth_boost(self):
         if self.growth_speed < 2.5 and self.money >= 1500:
             self.money -= 1500
             self.growth_speed += 0.5
-            self.log(f'⚡ Growth speed now x{self.growth_speed}!')
+            self.log('Growth x' + str(self.growth_speed) + '!')
             self.update_stats()
 
     def expand_farm(self):
@@ -604,40 +405,38 @@ Good luck, farmer! 🚜"""
             if self.money >= cost:
                 self.money -= cost
                 self.grid_size += 1
-                self.log(f'📐 Farm expanded to {self.grid_size}x{self.grid_size}!')
+                self.log('Farm ' + str(self.grid_size) + 'x' + str(self.grid_size) + '!')
                 self.update_stats()
-                # Показываем новые клетки
-                for i in range(self.grid_size):
-                    for j in range(self.grid_size):
-                        self.cell_frames[i][j].grid()
-                        self.update_cell_visual(i, j)
+            for i in range(self.grid_size):
+                for j in range(self.grid_size):
+                    self.cell_buttons[i][j].grid()
+                    self.update_cell(i, j)
 
     def buy_greenhouse(self):
         if not self.greenhouse and self.money >= 2000:
             self.money -= 2000
             self.greenhouse = True
-            self.log('🏠 Greenhouse built! Plants never wither!')
+            self.log('Greenhouse ON!')
             self.update_stats()
 
     def buy_auto_harvest(self):
         if not self.auto_harvest and self.money >= 3000:
             self.money -= 3000
             self.auto_harvest = True
-            self.log('🤖 Auto-Harvest activated!')
+            self.log('Auto-Harvest ON!')
             self.update_stats()
 
     def buy_pest_control(self):
-        if self.pest_chance > 0 and self.money >= 800:
+        if self.money >= 800:
             self.money -= 800
-            self.pest_chance = 0
-            self.log('🛡️ Pest Control activated!')
+            self.log('Pest Control ON!')
             self.update_stats()
 
     def buy_marketing(self):
         if self.price_bonus < 1.5 and self.money >= 1000:
             self.money -= 1000
             self.price_bonus += 0.25
-            self.log(f'📢 Sell price bonus: +{int((self.price_bonus-1)*100)}%!')
+            self.log('Price bonus +' + str(int((self.price_bonus-1)*100)) + '%!')
             self.update_stats()
 
     def buy_water_tank(self):
@@ -645,14 +444,14 @@ Good luck, farmer! 🚜"""
             self.money -= 300
             self.max_water += 25
             self.water = min(self.max_water, self.water + 25)
-            self.log(f'🚰 Water tank upgraded! Max: {self.max_water}')
+            self.log('Water max: ' + str(self.max_water))
             self.update_stats()
 
     def buy_rain_collector(self):
-        if not getattr(self, 'rain_collector', False) and self.money >= 1500:
+        if not self.rain_collector and self.money >= 1500:
             self.money -= 1500
             self.rain_collector = True
-            self.log('🌧️ Rain Collector installed! Auto water refill!')
+            self.log('Rain Collector ON!')
             self.update_stats()
 
     def level_up(self):
@@ -662,12 +461,13 @@ Good luck, farmer! 🚜"""
         bonus = 50 * self.level
         self.money += bonus
         self.water = self.max_water
-        self.log(f'🎉 LEVEL UP! Now level {self.level}! Bonus: +${bonus}, water refilled!')
-        messagebox.showinfo('Level Up!', f'You reached level {self.level}!\nBonus: +${bonus}\nNew crops unlocked!')
+        self.log('LEVEL ' + str(self.level) + '! Bonus +$' + str(bonus) + '!')
+        msg = 'Level ' + str(self.level) + '!' + chr(10) + 'Bonus: +$' + str(bonus) + chr(10) + 'New crops!'
+        messagebox.showinfo('Level Up!', msg)
 
     def log(self, message):
         self.log_text.config(state=tk.NORMAL)
-        self.log_text.insert(tk.END, message + '\n')
+        self.log_text.insert(tk.END, message + chr(10))
         self.log_text.see(tk.END)
         self.log_text.config(state=tk.DISABLED)
 
