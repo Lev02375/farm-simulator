@@ -374,19 +374,32 @@ class FarmGame:
         crops_f = self.tab_frames['crops']
         for widget in crops_f.winfo_children():
             widget.destroy()
+
         canvas = tk.Canvas(crops_f, bg='#0f3460', highlightthickness=0)
         sb = tk.Scrollbar(crops_f, orient=tk.VERTICAL, command=canvas.yview)
-        inner = tk.Frame(canvas, bg='#0f3460')
-        inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
-        canvas.create_window((0, 0), window=inner, anchor='nw')
+
+        inner = tk.Frame(canvas, bg='#0f3460', width=320)
+        inner.pack_propagate(False)
+
+        def on_configure(event):
+            canvas.configure(scrollregion=(0, 0, 320, inner.winfo_height()))
+        inner.bind('<Configure>', on_configure)
+
+        canvas.create_window((0, 0), window=inner, anchor='nw', width=320)
         canvas.configure(yscrollcommand=sb.set)
+
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Привязка колесика мыши для скроллинга
-        canvas.bind_all("<MouseWheel>", lambda e: self._on_mousewheel(e, canvas))
-        canvas.bind_all("<Button-4>", lambda e: self._on_mousewheel(e, canvas))
-        canvas.bind_all("<Button-5>", lambda e: self._on_mousewheel(e, canvas))
+        def on_mousewheel(event):
+            if event.num == 4 or event.delta > 0:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5 or event.delta < 0:
+                canvas.yview_scroll(1, "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+        canvas.bind_all("<Button-4>", on_mousewheel)
+        canvas.bind_all("<Button-5>", on_mousewheel)
 
         self.crop_var = tk.StringVar(value='wheat')
         self.crop_buttons = {}
@@ -410,15 +423,24 @@ class FarmGame:
             tk.Label(f, text=info, font=('Arial', 8), bg='#1a1a2e', fg='#95A5A6').pack(anchor=tk.W, padx=4, pady=(0,2))
             self.crop_buttons[crop_id] = (rb, f)
 
+        # Явно обновляем scrollregion после создания всех виджетов
+        inner.update_idletasks()
+        canvas.configure(scrollregion=(0, 0, 320, inner.winfo_height()))
+
     def build_shop_tab(self):
         shop_f = self.tab_frames['shop']
         for widget in shop_f.winfo_children():
             widget.destroy()
         shop_canvas = tk.Canvas(shop_f, bg='#0f3460', highlightthickness=0)
         shop_sb = tk.Scrollbar(shop_f, orient=tk.VERTICAL, command=shop_canvas.yview)
-        shop_inner = tk.Frame(shop_canvas, bg='#0f3460')
-        shop_inner.bind('<Configure>', lambda e: shop_canvas.configure(scrollregion=shop_canvas.bbox('all')))
-        shop_canvas.create_window((0, 0), window=shop_inner, anchor='nw')
+        shop_inner = tk.Frame(shop_canvas, bg='#0f3460', width=320)
+        shop_inner.pack_propagate(False)
+
+        def shop_on_configure(event):
+            shop_canvas.configure(scrollregion=(0, 0, 320, shop_inner.winfo_height()))
+        shop_inner.bind('<Configure>', shop_on_configure)
+
+        shop_canvas.create_window((0, 0), window=shop_inner, anchor='nw', width=320)
         shop_canvas.configure(yscrollcommand=shop_sb.set)
         shop_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         shop_sb.pack(side=tk.RIGHT, fill=tk.Y)
