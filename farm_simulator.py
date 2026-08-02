@@ -379,14 +379,14 @@ class FarmGame:
         sb = tk.Scrollbar(crops_f, orient=tk.VERTICAL, command=canvas.yview)
         inner = tk.Frame(canvas, bg='#0f3460')
 
-        # width=310 гарантирует, что inner всегда имеет правильную ширину,
-        # даже если вкладка скрыта при перестроении
         canvas.create_window((0, 0), window=inner, anchor='nw', width=310)
         canvas.configure(yscrollcommand=sb.set)
-        inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.crops_canvas = canvas
+        self.crops_sb = sb
 
         # Привязка колесика мыши
         def on_mousewheel(event):
@@ -429,10 +429,12 @@ class FarmGame:
 
         shop_canvas.create_window((0, 0), window=shop_inner, anchor='nw', width=310)
         shop_canvas.configure(yscrollcommand=shop_sb.set)
-        shop_inner.bind('<Configure>', lambda e: shop_canvas.configure(scrollregion=shop_canvas.bbox('all')))
 
         shop_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         shop_sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.shop_canvas = shop_canvas
+        self.shop_sb = shop_sb
 
         shop_items = [
             ('watering_can', self.t['watering_can'], self.t['watering_can_desc'], 80, self.buy_watering_can),
@@ -528,6 +530,12 @@ class FarmGame:
         self.current_tab = name
         self.tab_frames[name].pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         self.tab_buttons[name].config(bg='#27AE60')
+
+        # Обновляем scrollregion, когда вкладка становится видимой
+        if name == 'crops' and hasattr(self, 'crops_canvas'):
+            self.crops_canvas.after(50, lambda: self.crops_canvas.configure(scrollregion=self.crops_canvas.bbox('all')))
+        elif name == 'shop' and hasattr(self, 'shop_canvas'):
+            self.shop_canvas.after(50, lambda: self.shop_canvas.configure(scrollregion=self.shop_canvas.bbox('all')))
 
     def create_grid(self):
         for i in range(6):
