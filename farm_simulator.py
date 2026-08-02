@@ -379,24 +379,16 @@ class FarmGame:
         sb = tk.Scrollbar(crops_f, orient=tk.VERTICAL, command=canvas.yview)
         inner = tk.Frame(canvas, bg='#0f3460')
 
-        window_id = canvas.create_window((0, 0), window=inner, anchor='nw')
+        # width=310 гарантирует, что inner всегда имеет правильную ширину,
+        # даже если вкладка скрыта при перестроении
+        canvas.create_window((0, 0), window=inner, anchor='nw', width=310)
         canvas.configure(yscrollcommand=sb.set)
-
-        def resize_inner(event=None):
-            canvas.update_idletasks()
-            w = canvas.winfo_width()
-            if w > 1:
-                canvas.itemconfig(window_id, width=w)
-        canvas.bind('<Configure>', resize_inner)
         inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Устанавливаем начальную ширину
-        canvas.after(50, resize_inner)
-
-        # Привязка колесика мыши для скроллинга
+        # Привязка колесика мыши
         def on_mousewheel(event):
             if event.num == 4 or event.delta > 0:
                 canvas.yview_scroll(-1, "units")
@@ -435,22 +427,12 @@ class FarmGame:
         shop_sb = tk.Scrollbar(shop_f, orient=tk.VERTICAL, command=shop_canvas.yview)
         shop_inner = tk.Frame(shop_canvas, bg='#0f3460')
 
-        shop_window_id = shop_canvas.create_window((0, 0), window=shop_inner, anchor='nw')
+        shop_canvas.create_window((0, 0), window=shop_inner, anchor='nw', width=310)
         shop_canvas.configure(yscrollcommand=shop_sb.set)
-
-        def shop_resize_inner(event=None):
-            shop_canvas.update_idletasks()
-            w = shop_canvas.winfo_width()
-            if w > 1:
-                shop_canvas.itemconfig(shop_window_id, width=w)
-        shop_canvas.bind('<Configure>', shop_resize_inner)
         shop_inner.bind('<Configure>', lambda e: shop_canvas.configure(scrollregion=shop_canvas.bbox('all')))
 
         shop_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         shop_sb.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Устанавливаем начальную ширину
-        shop_canvas.after(50, shop_resize_inner)
 
         shop_items = [
             ('watering_can', self.t['watering_can'], self.t['watering_can_desc'], 80, self.buy_watering_can),
