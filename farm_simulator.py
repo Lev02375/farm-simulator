@@ -73,7 +73,7 @@ TEXTS = {
         'water_tank_desc': "+25 max water capacity.",
         'rain_collector': "Rain Collector",
         'rain_collector_desc': "Auto-refills water faster.",
-        'help_text': "HOW TO PLAY\n\nLeft Click = Plant / Harvest\nClick WATER MODE then Left Click = Water\n\nWATER SYSTEM:\n- Buy Watering Can first!\n- Click WATER MODE to enable watering\n- Each water costs 5 units\n- Water refills over time\n\n18 CROPS (1-12 min grow time)\n- Unlock by leveling up\n- Higher level = more profit\n\nTIPS:\n- Plants dry out in 15s without water\n- Withered = no profit\n- Buy upgrades wisely!",
+        'help_text': "HOW TO PLAY\n\nLeft Click = Plant / Harvest\nClick WATER MODE then Left Click = Water\n\nWATER SYSTEM:\n- Buy Watering Can first!\n- Click WATER MODE to enable watering\n- Each water costs 5 units\n- Water refills over time\n\n25 CROPS (1-18 min grow time)\n- Unlock by leveling up\n- Higher level = more profit\n\nTIPS:\n- Plants dry out in 15s without water\n- Withered = no profit\n- Buy upgrades wisely!",
         'cheat_codes': "CHEAT CODES",
         'enter_cheat': "Enter cheat code:",
         'execute': "EXECUTE",
@@ -85,6 +85,8 @@ TEXTS = {
         'cheat_unlock': "unlockall - unlock all crops",
         'cheat_god': "godmode - activate god mode",
         'cheat_maxwater': "maxwater - infinite water",
+        'secret_unlocked': "SECRET CROP UNLOCKED!",
+        'money_tree': "Money Tree",
     },
     'ru': {
         'title': "Фермерский Симулятор",
@@ -153,7 +155,7 @@ TEXTS = {
         'water_tank_desc': "+25 макс. воды.",
         'rain_collector': "Дождесборник",
         'rain_collector_desc': "Быстрее восполняет воду.",
-        'help_text': "КАК ИГРАТЬ\n\nЛКМ = Посадить / Собрать\nНажми РЕЖИМ ПОЛИВА, затем ЛКМ = Полить\n\nСИСТЕМА ВОДЫ:\n- Сначала купи лейку!\n- Нажми РЕЖИМ ПОЛИВА для полива\n- Каждый полив стоит 5 воды\n- Вода восстанавливается со временем\n\n18 РАСТЕНИЙ (1-12 мин рост)\n- Открываются по уровням\n- Выше уровень = больше прибыли\n\nСОВЕТЫ:\n- Растения сохнут за 15 сек без воды\n- Засохшие = нет прибыли\n- Покупай улучшения с умом!",
+        'help_text': "КАК ИГРАТЬ\n\nЛКМ = Посадить / Собрать\nНажми РЕЖИМ ПОЛИВА, затем ЛКМ = Полить\n\nСИСТЕМА ВОДЫ:\n- Сначала купи лейку!\n- Нажми РЕЖИМ ПОЛИВА для полива\n- Каждый полив стоит 5 воды\n- Вода восстанавливается со временем\n\n25 РАСТЕНИЙ (1-18 мин рост)\n- Открываются по уровням\n- Выше уровень = больше прибыли\n\nСОВЕТЫ:\n- Растения сохнут за 15 сек без воды\n- Засохшие = нет прибыли\n- Покупай улучшения с умом!",
         'cheat_codes': "ЧИТ-КОДЫ",
         'enter_cheat': "Введите чит-код:",
         'execute': "ВЫПОЛНИТЬ",
@@ -165,6 +167,8 @@ TEXTS = {
         'cheat_unlock': "unlockall - открыть все растения",
         'cheat_god': "godmode - режим бога",
         'cheat_maxwater': "maxwater - бесконечная вода",
+        'secret_unlocked': "СЕКРЕТНОЕ РАСТЕНИЕ ОТКРЫТО!",
+        'money_tree': "Денежное Дерево",
     }
 }
 
@@ -197,12 +201,14 @@ class Weather:
         self.colors = {'sunny': '#F39C12', 'rain': '#3498DB', 'storm': '#8E44AD', 'snow': '#BDC3C7', 'cloudy': '#7F8C8D'}
 
 # ASCII-арт растений
-SEED_ART = '  .  ' + chr(10) + ' /|\\ ' + chr(10) + '/ | \\'
-SPROUT_ART = '  |  ' + chr(10) + ' /|\\ ' + chr(10) + '/ | \\'
-GROW_ART = '  Y  ' + chr(10) + ' /|\\ ' + chr(10) + '/ | \\'
-BUSH_ART = '  *  ' + chr(10) + ' /|\\ ' + chr(10) + '/ | \\'
-READY_ART = ' [O] ' + chr(10) + ' /|\\ ' + chr(10) + '/ | \\'
-DEAD_ART = '  x  ' + chr(10) + ' /|\\ ' + chr(10) + '/ | \\'
+_s = chr(92)
+SEED_ART = '  .  ' + chr(10) + ' /|' + _s + ' ' + chr(10) + '/ | ' + _s
+SPROUT_ART = '  |  ' + chr(10) + ' /|' + _s + ' ' + chr(10) + '/ | ' + _s
+GROW_ART = '  Y  ' + chr(10) + ' /|' + _s + ' ' + chr(10) + '/ | ' + _s
+BUSH_ART = '  *  ' + chr(10) + ' /|' + _s + ' ' + chr(10) + '/ | ' + _s
+READY_ART = ' [O] ' + chr(10) + ' /|' + _s + ' ' + chr(10) + '/ | ' + _s
+DEAD_ART = '  x  ' + chr(10) + ' /|' + _s + ' ' + chr(10) + '/ | ' + _s
+MONEY_TREE_ART = '  $  ' + chr(10) + ' /|' + _s + ' ' + chr(10) + '/ | ' + _s
 
 class FarmGame:
     def __init__(self, root):
@@ -231,6 +237,7 @@ class FarmGame:
         self.greenhouse = False
         self.rain_collector = False
         self.water_mode = False
+        self.money_tree_unlocked = False
 
         self.weather = Weather()
 
@@ -253,6 +260,14 @@ class FarmGame:
             'sunflower':  Crop('Sunflower',   'Подсолнух',    300, 800,  9, '#F1C40F', 6),
             'pineapple':  Crop('Pineapple',   'Ананас',       400, 1100, 10, '#F39C12', 6),
             'grape':      Crop('Grape',       'Виноград',     500, 1400, 12, '#9B59B6', 7),
+            'cherry':     Crop('Cherry',      'Вишня',        600, 1600, 12, '#E91E63', 7),
+            'olive':      Crop('Olive',       'Олива',        750, 2000, 13, '#9E9D24', 8),
+            'peach':      Crop('Peach',       'Персик',       850, 2300, 13, '#FFAB91', 8),
+            'mango':      Crop('Mango',       'Манго',        1000, 2800, 14, '#FFD54F', 9),
+            'coconut':    Crop('Coconut',     'Кокос',        1200, 3400, 15, '#795548', 9),
+            'dragonfruit':Crop('Dragon Fruit','Питахайя',     1500, 4200, 16, '#AB47BC', 10),
+            'saffron':    Crop('Saffron',     'Шафран',       2000, 6000, 18, '#FBC02D', 11),
+            'money_tree': Crop('Money Tree',  'Денежное Дерево', 0, 0, 1, '#FFD700', 999),
         }
 
         self.selected_crop = 'wheat'
@@ -349,6 +364,12 @@ class FarmGame:
         self.log('Welcome!')
         self.log('Buy Watering Can, then click WATER MODE to water!')
 
+    def _on_mousewheel(self, event, canvas):
+        if event.num == 4 or event.delta > 0:
+            canvas.yview_scroll(-1, "units")
+        elif event.num == 5 or event.delta < 0:
+            canvas.yview_scroll(1, "units")
+
     def build_crops_tab(self):
         crops_f = self.tab_frames['crops']
         for widget in crops_f.winfo_children():
@@ -362,10 +383,17 @@ class FarmGame:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
 
+        # Привязка колесика мыши для скроллинга
+        canvas.bind_all("<MouseWheel>", lambda e: self._on_mousewheel(e, canvas))
+        canvas.bind_all("<Button-4>", lambda e: self._on_mousewheel(e, canvas))
+        canvas.bind_all("<Button-5>", lambda e: self._on_mousewheel(e, canvas))
+
         self.crop_var = tk.StringVar(value='wheat')
         self.crop_buttons = {}
 
         for crop_id, crop in self.crops.items():
+            if crop_id == 'money_tree' and not self.money_tree_unlocked:
+                continue
             f = tk.Frame(inner, bg='#1a1a2e', bd=2, relief=tk.GROOVE)
             f.pack(fill=tk.X, padx=4, pady=2)
             locked = self.level < crop.unlock_level
@@ -458,12 +486,7 @@ class FarmGame:
         tk.Button(cheats_f, text=self.t['execute'], font=('Arial', 10, 'bold'), bg='#E74C3C', fg='white',
                  command=self.execute_cheat).pack(pady=5)
 
-        cheats_info = self.t['cheat_money'] + chr(10) + self.t['cheat_level'] + chr(10) + self.t['cheat_water'] + chr(10)
-        cheats_info += self.t['cheat_speed'] + chr(10) + self.t['cheat_weather'] + chr(10)
-        cheats_info += self.t['cheat_unlock'] + chr(10) + self.t['cheat_god'] + chr(10) + self.t['cheat_maxwater']
-
-        tk.Label(cheats_f, text=cheats_info, font=('Courier', 9), bg='#0f3460', fg='#95A5A6',
-                justify=tk.LEFT, wraplength=300).pack(padx=10, pady=10)
+        # Подсказки убраны по запросу
 
     def change_language(self, lang):
         if self.lang == lang:
@@ -525,7 +548,9 @@ class FarmGame:
         elif cell.stage == 'growing':
             crop = self.crops[cell.crop]
             progress = min(1.0, cell.progress)
-            if progress < 0.2:
+            if cell.crop == 'money_tree':
+                art = MONEY_TREE_ART
+            elif progress < 0.2:
                 art = SEED_ART
             elif progress < 0.4:
                 art = SPROUT_ART
@@ -548,7 +573,10 @@ class FarmGame:
                           activebackground='#870000', relief=tk.SUNKEN, bd=2)
         elif cell.stage == 'ready':
             crop = self.crops[cell.crop]
-            art = READY_ART
+            if cell.crop == 'money_tree':
+                art = MONEY_TREE_ART
+            else:
+                art = READY_ART
             name = crop.name_ru if self.lang == 'ru' else crop.name_en
             btn.config(text=art + chr(10) + '---' + chr(10) + name.upper(),
                       bg=crop.color, fg='black',
@@ -626,6 +654,14 @@ class FarmGame:
                 self.auto_harvest = True
                 self.growth_speed = 10.0
                 self.log('CHEAT: GOD MODE!')
+            elif action == 'get' and len(parts) >= 3 and parts[1] == 'admin' and parts[2] == 'crop8365':
+                if not self.money_tree_unlocked:
+                    self.money_tree_unlocked = True
+                    self.crops['money_tree'].unlock_level = 1
+                    self.log('SECRET: ' + self.t['money_tree'] + ' ' + self.t['secret_unlocked'])
+                    self.build_crops_tab()
+                else:
+                    self.log('SECRET: Already unlocked!')
             else:
                 self.log('Unknown cheat: ' + cmd)
         except:
@@ -675,7 +711,10 @@ class FarmGame:
                 messagebox.showwarning(self.t['no_money'], self.t['need'] + ' $' + str(crop.seed_cost))
         elif cell.stage == 'ready':
             crop = self.crops[cell.crop]
-            sell_price = int(crop.sell_price * self.price_bonus)
+            if cell.crop == 'money_tree':
+                sell_price = max(1, int(self.money * 0.3))
+            else:
+                sell_price = int(crop.sell_price * self.price_bonus)
             self.money += sell_price
             xp_gain = int(sell_price / 5)
             self.xp += xp_gain
