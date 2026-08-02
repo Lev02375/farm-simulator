@@ -237,7 +237,6 @@ class FarmGame:
         self.greenhouse = False
         self.rain_collector = False
         self.water_mode = False
-        self.money_tree_unlocked = False
 
         self.weather = Weather()
 
@@ -402,7 +401,7 @@ class FarmGame:
         self.crop_buttons = {}
 
         for crop_id, crop in self.crops.items():
-            if crop_id == 'money_tree' and not self.money_tree_unlocked:
+            if crop_id == 'money_tree':
                 continue
             f = tk.Frame(inner, bg='#1a1a2e', bd=2, relief=tk.GROOVE)
             f.pack(fill=tk.X, padx=4, pady=2)
@@ -673,13 +672,25 @@ class FarmGame:
                 self.growth_speed = 10.0
                 self.log('CHEAT: GOD MODE!')
             elif action == 'get' and len(parts) >= 3 and parts[1] == 'admin' and parts[2] == 'crop8365':
-                if not self.money_tree_unlocked:
-                    self.money_tree_unlocked = True
-                    self.crops['money_tree'].unlock_level = 1
-                    self.log('SECRET: ' + self.t['money_tree'] + ' ' + self.t['secret_unlocked'])
-                    self.build_crops_tab()
-                else:
-                    self.log('SECRET: Already unlocked!')
+                # Ищем первую свободную клетку
+                planted = False
+                for i in range(self.grid_size):
+                    for j in range(self.grid_size):
+                        if self.farm[i][j].stage == 'empty':
+                            cell = self.farm[i][j]
+                            cell.crop = 'money_tree'
+                            cell.plant_time = time.time()
+                            cell.watered = True
+                            cell.stage = 'growing'
+                            cell.progress = 0.0
+                            self.update_cell(i, j)
+                            self.log('SECRET: ' + self.t['money_tree'] + ' ' + self.t['planted'] + ' [' + str(i) + ',' + str(j) + ']')
+                            planted = True
+                            break
+                    if planted:
+                        break
+                if not planted:
+                    self.log('SECRET: No empty cell for Money Tree!')
             else:
                 self.log('Unknown cheat: ' + cmd)
         except:
