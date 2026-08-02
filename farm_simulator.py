@@ -377,19 +377,24 @@ class FarmGame:
 
         canvas = tk.Canvas(crops_f, bg='#0f3460', highlightthickness=0)
         sb = tk.Scrollbar(crops_f, orient=tk.VERTICAL, command=canvas.yview)
+        inner = tk.Frame(canvas, bg='#0f3460')
 
-        inner = tk.Frame(canvas, bg='#0f3460', width=320)
-        inner.pack_propagate(False)
-
-        def on_configure(event):
-            canvas.configure(scrollregion=(0, 0, 320, inner.winfo_height()))
-        inner.bind('<Configure>', on_configure)
-
-        canvas.create_window((0, 0), window=inner, anchor='nw', width=320)
+        window_id = canvas.create_window((0, 0), window=inner, anchor='nw')
         canvas.configure(yscrollcommand=sb.set)
+
+        def resize_inner(event=None):
+            canvas.update_idletasks()
+            w = canvas.winfo_width()
+            if w > 1:
+                canvas.itemconfig(window_id, width=w)
+        canvas.bind('<Configure>', resize_inner)
+        inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Устанавливаем начальную ширину
+        canvas.after(50, resize_inner)
 
         # Привязка колесика мыши для скроллинга
         def on_mousewheel(event):
@@ -422,28 +427,30 @@ class FarmGame:
             if locked: info = info + ' | ' + self.t['locked'] + str(crop.unlock_level)
             tk.Label(f, text=info, font=('Arial', 8), bg='#1a1a2e', fg='#95A5A6').pack(anchor=tk.W, padx=4, pady=(0,2))
             self.crop_buttons[crop_id] = (rb, f)
-
-        # Явно обновляем scrollregion после создания всех виджетов
-        inner.update_idletasks()
-        canvas.configure(scrollregion=(0, 0, 320, inner.winfo_height()))
-
     def build_shop_tab(self):
         shop_f = self.tab_frames['shop']
         for widget in shop_f.winfo_children():
             widget.destroy()
         shop_canvas = tk.Canvas(shop_f, bg='#0f3460', highlightthickness=0)
         shop_sb = tk.Scrollbar(shop_f, orient=tk.VERTICAL, command=shop_canvas.yview)
-        shop_inner = tk.Frame(shop_canvas, bg='#0f3460', width=320)
-        shop_inner.pack_propagate(False)
+        shop_inner = tk.Frame(shop_canvas, bg='#0f3460')
 
-        def shop_on_configure(event):
-            shop_canvas.configure(scrollregion=(0, 0, 320, shop_inner.winfo_height()))
-        shop_inner.bind('<Configure>', shop_on_configure)
-
-        shop_canvas.create_window((0, 0), window=shop_inner, anchor='nw', width=320)
+        shop_window_id = shop_canvas.create_window((0, 0), window=shop_inner, anchor='nw')
         shop_canvas.configure(yscrollcommand=shop_sb.set)
+
+        def shop_resize_inner(event=None):
+            shop_canvas.update_idletasks()
+            w = shop_canvas.winfo_width()
+            if w > 1:
+                shop_canvas.itemconfig(shop_window_id, width=w)
+        shop_canvas.bind('<Configure>', shop_resize_inner)
+        shop_inner.bind('<Configure>', lambda e: shop_canvas.configure(scrollregion=shop_canvas.bbox('all')))
+
         shop_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         shop_sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Устанавливаем начальную ширину
+        shop_canvas.after(50, shop_resize_inner)
 
         shop_items = [
             ('watering_can', self.t['watering_can'], self.t['watering_can_desc'], 80, self.buy_watering_can),
@@ -466,7 +473,6 @@ class FarmGame:
             btn.pack(fill=tk.X, padx=4, pady=(4,0))
             tk.Label(f, text=desc, font=('Arial', 8), bg='#1a1a2e', fg='#95A5A6', justify=tk.LEFT).pack(anchor=tk.W, padx=4, pady=(0,3))
             self.shop_buttons[key] = btn
-
     def build_settings_tab(self):
         settings_f = self.tab_frames['settings']
         for widget in settings_f.winfo_children():
